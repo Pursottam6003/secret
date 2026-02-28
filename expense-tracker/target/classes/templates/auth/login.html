@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Login')}"></head>
+<body class="bg-light">
+
+<div class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="card shadow-lg border-0" style="width:420px">
+        <div class="card-body p-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-wallet2 display-4 text-primary"></i>
+                <h2 class="fw-bold mt-2">SplitEase</h2>
+                <p class="text-muted">Sign in to your account</p>
+            </div>
+
+            <!-- Alert from query param -->
+            <div th:if="${param.error}" class="alert alert-danger small py-2">
+                Invalid email or password.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success small py-2">
+                You have been logged out.
+            </div>
+
+            <!-- REST-based login (stores JWT in localStorage) -->
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="email" id="loginEmail" class="form-control"
+                           placeholder="you@example.com" required/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Password</label>
+                    <input type="password" id="loginPassword" class="form-control"
+                           placeholder="••••••••" required/>
+                </div>
+                <div id="loginError" class="alert alert-danger small py-2 d-none"></div>
+                <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </button>
+            </form>
+
+            <hr/>
+            <div class="text-center small">
+                Don't have an account? <a href="/register">Create one</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email    = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errEl    = document.getElementById('loginError');
+    errEl.classList.add('d-none');
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            errEl.textContent = err.message || 'Login failed';
+            errEl.classList.remove('d-none');
+            return;
+        }
+        const data = await res.json();
+        localStorage.setItem('jwt', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userName', data.name);
+        // Set cookie so server-side Thymeleaf pages also get the token
+        document.cookie = `jwt=${data.accessToken}; path=/; SameSite=Strict`;
+        window.location.href = '/dashboard';
+    } catch (err) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('d-none');
+    }
+});
+</script>
+</body>
+</html>

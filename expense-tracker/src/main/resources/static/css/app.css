@@ -1,0 +1,92 @@
+/* ─── SplitEase Custom Styles ─────────────────────────────────────────────── */
+
+:root {
+    --primary: #4361ee;
+    --success: #2dc653;
+    --danger: #ef233c;
+    --bg-soft: #f8f9fa;
+}
+
+body {
+    background-color: var(--bg-soft);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+    border-radius: 12px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+.navbar {
+    backdrop-filter: blur(8px);
+}
+
+/* ─── Badges ─────────────────────────────────────────────────────────────── */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* ─── Avatar ─────────────────────────────────────────────────────────────── */
+.avatar-circle {
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ─── Expense list ───────────────────────────────────────────────────────── */
+.list-group-item {
+    transition: background-color 0.1s ease;
+}
+
+.list-group-item:hover {
+    background-color: rgba(67, 97, 238, 0.04);
+}
+
+/* ─── Charts ─────────────────────────────────────────────────────────────── */
+canvas {
+    max-height: 320px;
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+.bg-primary-subtle  { background-color: rgba(67, 97, 238, 0.12) !important; }
+.bg-success-subtle  { background-color: rgba(45, 198, 83, 0.12) !important; }
+.bg-danger-subtle   { background-color: rgba(239, 35, 60, 0.12) !important; }
+.bg-warning-subtle  { background-color: rgba(255, 190, 11, 0.12) !important; }
+
+.text-primary { color: var(--primary) !important; }
+
+/* ─── Toast notification ─────────────────────────────────────────────────── */
+#toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+}
+
+.toast-message {
+    background: #212529;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ─── Responsive tweaks ──────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+    .card-body { padding: 1rem; }
+    h3.fw-bold { font-size: 1.4rem; }
+}

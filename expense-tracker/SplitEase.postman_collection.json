@@ -1,0 +1,1154 @@
+{
+  "info": {
+    "name": "SplitEase — Expense Tracker API",
+    "_postman_id": "splitease-v1-collection",
+    "description": "Complete API collection for SplitEase.\n\n**How to use:**\n1. Import this collection AND the `SplitEase.postman_environment.json` file.\n2. Select the `SplitEase Local` environment.\n3. Run the requests **in order** — each request auto-saves IDs into environment variables.\n4. Start with the Auth folder to get your JWT token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url",      "value": "http://localhost:8080" },
+    { "key": "access_token",  "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "alice_id",      "value": "" },
+    { "key": "bob_id",        "value": "" },
+    { "key": "carol_id",      "value": "" },
+    { "key": "group_id",      "value": "" },
+    { "key": "expense_id_1",  "value": "" },
+    { "key": "expense_id_2",  "value": "" },
+    { "key": "expense_id_3",  "value": "" },
+    { "key": "settlement_id", "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "01 - Auth",
+      "description": "Register three demo users, log in as Alice, and test token refresh.",
+      "item": [
+
+        {
+          "name": "Register Alice (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('access_token',  json.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', json.refreshToken);",
+                  "    pm.collectionVariables.set('alice_id',      json.userId);",
+                  "    pm.test('Alice registered', () => pm.response.to.have.status(200));",
+                  "    console.log('Alice ID:', json.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Johnson\",\n  \"email\": \"alice@demo.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1 555 100 0001\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Register Bob",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.userId) {",
+                  "    pm.collectionVariables.set('bob_id', json.userId);",
+                  "    pm.test('Bob registered', () => pm.response.to.have.status(200));",
+                  "    console.log('Bob ID:', json.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Smith\",\n  \"email\": \"bob@demo.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1 555 100 0002\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Register Carol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.userId) {",
+                  "    pm.collectionVariables.set('carol_id', json.userId);",
+                  "    pm.test('Carol registered', () => pm.response.to.have.status(200));",
+                  "    console.log('Carol ID:', json.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Carol White\",\n  \"email\": \"carol@demo.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1 555 100 0003\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Login as Alice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Login successful', () => pm.response.to.have.status(200));",
+                  "pm.test('Has access token', () => pm.expect(json.accessToken).to.be.a('string'));",
+                  "pm.collectionVariables.set('access_token',  json.accessToken);",
+                  "pm.collectionVariables.set('refresh_token', json.refreshToken);",
+                  "pm.collectionVariables.set('alice_id',      json.userId);",
+                  "console.log('Logged in as Alice. Token saved.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@demo.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Token refreshed', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('access_token',  json.accessToken);",
+                  "pm.collectionVariables.set('refresh_token', json.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh?refreshToken={{refresh_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["api","auth","refresh"],
+              "query": [{ "key": "refreshToken", "value": "{{refresh_token}}" }]
+            }
+          }
+        },
+
+        {
+          "name": "Login — Wrong Password (should 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 401 for bad creds', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@demo.com\",\n  \"password\": \"WRONG_PASSWORD\"\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "02 - Groups",
+      "description": "Create groups, manage members, list and delete groups.",
+      "item": [
+
+        {
+          "name": "Create Group — Vegas Trip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Group created', () => pm.response.to.have.status(200));",
+                  "pm.test('Group has ID', () => pm.expect(json.id).to.be.a('number'));",
+                  "pm.collectionVariables.set('group_id', json.id);",
+                  "console.log('Group ID:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/groups", "host": ["{{base_url}}"], "path": ["api","groups"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vegas Road Trip\",\n  \"description\": \"Splitting costs for our July Vegas trip\",\n  \"defaultCurrency\": \"USD\",\n  \"memberEmails\": [\"bob@demo.com\", \"carol@demo.com\"]\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Get My Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/groups", "host": ["{{base_url}}"], "path": ["api","groups"] }
+          }
+        },
+
+        {
+          "name": "Get Group by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Group name matches', () => pm.expect(pm.response.json().name).to.equal('Vegas Road Trip'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/groups/{{group_id}}", "host": ["{{base_url}}"], "path": ["api","groups","{{group_id}}"] }
+          }
+        },
+
+        {
+          "name": "Get Group Members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has 3 members', () => pm.expect(pm.response.json().length).to.equal(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/groups/{{group_id}}/members", "host": ["{{base_url}}"], "path": ["api","groups","{{group_id}}","members"] }
+          }
+        },
+
+        {
+          "name": "Add New Member (Dave)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Register Dave first so he exists in the system",
+                  "const base = pm.collectionVariables.get('base_url');",
+                  "pm.sendRequest({",
+                  "  url: base + '/api/auth/register',",
+                  "  method: 'POST',",
+                  "  header: { 'Content-Type': 'application/json' },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({ name: 'Dave Brown', email: 'dave@demo.com', password: 'password123' }) }",
+                  "}, (err, res) => {",
+                  "  if (!err && res.json().userId) pm.collectionVariables.set('dave_id', res.json().userId);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Member added (200)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}/members?email=dave@demo.com",
+              "host": ["{{base_url}}"],
+              "path": ["api","groups","{{group_id}}","members"],
+              "query": [{ "key": "email", "value": "dave@demo.com" }]
+            }
+          }
+        },
+
+        {
+          "name": "Add Duplicate Member (should 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Conflict on duplicate', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}/members?email=bob@demo.com",
+              "host": ["{{base_url}}"],
+              "path": ["api","groups","{{group_id}}","members"],
+              "query": [{ "key": "email", "value": "bob@demo.com" }]
+            }
+          }
+        },
+
+        {
+          "name": "Create Second Group (Flatmates)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Second group created', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/groups", "host": ["{{base_url}}"], "path": ["api","groups"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Flatmates\",\n  \"description\": \"Monthly shared bills\",\n  \"defaultCurrency\": \"USD\",\n  \"memberEmails\": [\"bob@demo.com\"]\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "03 - Expenses",
+      "description": "Add expenses using all three split types. IDs are auto-saved.",
+      "item": [
+
+        {
+          "name": "Add Expense — Equal Split (Hotel)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Expense created', () => pm.response.to.have.status(200));",
+                  "pm.test('Amount correct', () => pm.expect(parseFloat(json.amount)).to.equal(300));",
+                  "pm.collectionVariables.set('expense_id_1', json.id);",
+                  "console.log('Hotel expense ID:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Hotel — 2 nights at MGM Grand\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{alice_id}},\n  \"splitType\": \"EQUAL\",\n  \"category\": \"ACCOMMODATION\",\n  \"expenseDate\": \"2025-07-15\",\n  \"notes\": \"Booked on Booking.com. Room 412.\",\n  \"participantIds\": [{{alice_id}}, {{bob_id}}, {{carol_id}}]\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Add Expense — Exact Split (Dinner)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Dinner expense created', () => pm.response.to.have.status(200));",
+                  "pm.test('Split type is EXACT', () => pm.expect(json.splitType).to.equal('EXACT'));",
+                  "pm.collectionVariables.set('expense_id_2', json.id);",
+                  "console.log('Dinner expense ID:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Dinner at Gordon Ramsay Steak\",\n  \"amount\": 180.00,\n  \"currency\": \"USD\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{bob_id}},\n  \"splitType\": \"EXACT\",\n  \"category\": \"FOOD\",\n  \"expenseDate\": \"2025-07-15\",\n  \"notes\": \"Alice had steak, Bob had salmon, Carol had pasta\",\n  \"splitDetails\": {\n    \"{{alice_id}}\": 80.00,\n    \"{{bob_id}}\": 60.00,\n    \"{{carol_id}}\": 40.00\n  }\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Add Expense — Percentage Split (Fuel)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Fuel expense created', () => pm.response.to.have.status(200));",
+                  "pm.test('Split type is PERCENTAGE', () => pm.expect(json.splitType).to.equal('PERCENTAGE'));",
+                  "pm.collectionVariables.set('expense_id_3', json.id);",
+                  "console.log('Fuel expense ID:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Gas — Full Tank Both Ways\",\n  \"amount\": 120.00,\n  \"currency\": \"USD\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{carol_id}},\n  \"splitType\": \"PERCENTAGE\",\n  \"category\": \"TRANSPORT\",\n  \"expenseDate\": \"2025-07-14\",\n  \"notes\": \"Alice drove 50%, Bob 30%, Carol 20%\",\n  \"splitDetails\": {\n    \"{{alice_id}}\": 50,\n    \"{{bob_id}}\": 30,\n    \"{{carol_id}}\": 20\n  }\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Add Expense — Groceries (Equal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Groceries expense created', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Snacks and Drinks from Walmart\",\n  \"amount\": 54.60,\n  \"currency\": \"USD\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{alice_id}},\n  \"splitType\": \"EQUAL\",\n  \"category\": \"GROCERIES\",\n  \"expenseDate\": \"2025-07-14\",\n  \"participantIds\": [{{alice_id}}, {{bob_id}}, {{carol_id}}]\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Add Expense — Show Tickets (Equal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Tickets expense created', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Cirque du Soleil — 3 tickets\",\n  \"amount\": 225.00,\n  \"currency\": \"USD\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{bob_id}},\n  \"splitType\": \"EQUAL\",\n  \"category\": \"ENTERTAINMENT\",\n  \"expenseDate\": \"2025-07-16\",\n  \"participantIds\": [{{alice_id}}, {{bob_id}}, {{carol_id}}]\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Add Expense — Validation Error (missing amount)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Validation rejects bad request (400)', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Missing amount field\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{alice_id}},\n  \"splitType\": \"EQUAL\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Get All Expenses (Group)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "const expenses = pm.response.json();",
+                  "pm.test('Has 5 expenses', () => pm.expect(expenses.length).to.equal(5));",
+                  "console.log('Total expenses:', expenses.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/expenses/group/{{group_id}}", "host": ["{{base_url}}"], "path": ["api","expenses","group","{{group_id}}"] }
+          }
+        },
+
+        {
+          "name": "Get Unsettled Expenses Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All unsettled', () => {",
+                  "  pm.response.json().forEach(e => pm.expect(e.settled).to.be.false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/expenses/group/{{group_id}}/unsettled", "host": ["{{base_url}}"], "path": ["api","expenses","group","{{group_id}}","unsettled"] }
+          }
+        },
+
+        {
+          "name": "Get Single Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Description correct', () => pm.expect(pm.response.json().description).to.include('Hotel'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/expenses/{{expense_id_1}}", "host": ["{{base_url}}"], "path": ["api","expenses","{{expense_id_1}}"] }
+          }
+        },
+
+        {
+          "name": "Delete Expense (by payer only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Deleted (204)', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/expenses/{{expense_id_1}}", "host": ["{{base_url}}"], "path": ["api","expenses","{{expense_id_1}}"] }
+          }
+        },
+
+        {
+          "name": "Re-add Hotel Expense (after deletion)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Re-created', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('expense_id_1', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/expenses", "host": ["{{base_url}}"], "path": ["api","expenses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Hotel — 2 nights at MGM Grand\",\n  \"amount\": 300.00,\n  \"currency\": \"USD\",\n  \"groupId\": {{group_id}},\n  \"paidByUserId\": {{alice_id}},\n  \"splitType\": \"EQUAL\",\n  \"category\": \"ACCOMMODATION\",\n  \"expenseDate\": \"2025-07-15\",\n  \"participantIds\": [{{alice_id}}, {{bob_id}}, {{carol_id}}]\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "04 - Settlements",
+      "description": "Check who owes what, record payments, view history.",
+      "item": [
+
+        {
+          "name": "Get Group Balances + Settlement Suggestions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has balances array', () => pm.expect(json.balances).to.be.an('array'));",
+                  "pm.test('Has suggestions', () => pm.expect(json.suggestions).to.be.an('array'));",
+                  "console.log('=== NET BALANCES ===');",
+                  "json.balances.forEach(b => console.log(`  ${b.userName}: $${b.netBalance}`));",
+                  "console.log('=== SUGGESTED SETTLEMENTS ===');",
+                  "json.suggestions.forEach(s => console.log(`  ${s.fromUserName} → ${s.toUserName}: $${s.amount}`));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/settlements/group/{{group_id}}/balances", "host": ["{{base_url}}"], "path": ["api","settlements","group","{{group_id}}","balances"] }
+          }
+        },
+
+        {
+          "name": "Record Settlement — Bob pays Alice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Settlement recorded', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is COMPLETED', () => pm.expect(json.status).to.equal('COMPLETED'));",
+                  "pm.collectionVariables.set('settlement_id', json.id);",
+                  "console.log('Settlement ID:', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/settlements", "host": ["{{base_url}}"], "path": ["api","settlements"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": {{group_id}},\n  \"payerId\": {{bob_id}},\n  \"receiverId\": {{alice_id}},\n  \"amount\": 85.00,\n  \"currency\": \"USD\",\n  \"notes\": \"Paid via Venmo\",\n  \"paymentReference\": \"VNM-2025-07-17-001\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Record Settlement — Carol pays Alice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Settlement recorded', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/settlements", "host": ["{{base_url}}"], "path": ["api","settlements"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": {{group_id}},\n  \"payerId\": {{carol_id}},\n  \"receiverId\": {{alice_id}},\n  \"amount\": 50.00,\n  \"currency\": \"USD\",\n  \"notes\": \"Cash payment\",\n  \"paymentReference\": \"CASH-20250717\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Get Balances After Partial Settlement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "console.log('Updated balances:');",
+                  "json.balances.forEach(b => console.log(`  ${b.userName}: $${b.netBalance}`));",
+                  "console.log('Remaining suggestions:');",
+                  "json.suggestions.forEach(s => console.log(`  ${s.fromUserName} → ${s.toUserName}: $${s.amount}`));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/settlements/group/{{group_id}}/balances", "host": ["{{base_url}}"], "path": ["api","settlements","group","{{group_id}}","balances"] }
+          }
+        },
+
+        {
+          "name": "Get Settlement History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has 2 settlements', () => pm.expect(pm.response.json().length).to.equal(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/settlements/group/{{group_id}}", "host": ["{{base_url}}"], "path": ["api","settlements","group","{{group_id}}"] }
+          }
+        },
+
+        {
+          "name": "Cancel a Settlement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is CANCELLED', () => pm.expect(pm.response.json().status).to.equal('CANCELLED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/settlements/{{settlement_id}}/cancel", "host": ["{{base_url}}"], "path": ["api","settlements","{{settlement_id}}","cancel"] }
+          }
+        },
+
+        {
+          "name": "Settlement — Same Payer & Receiver (should 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400 for same payer=receiver', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/settlements", "host": ["{{base_url}}"], "path": ["api","settlements"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": {{group_id}},\n  \"payerId\": {{alice_id}},\n  \"receiverId\": {{alice_id}},\n  \"amount\": 10.00\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "05 - Analytics",
+      "description": "Charts data endpoints — daily, weekly, monthly, category breakdown.",
+      "item": [
+
+        {
+          "name": "Summary (Today / Week / Month)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has todayTotal', () => pm.expect(json.todayTotal).to.not.be.undefined);",
+                  "pm.test('Has thisMonthTotal', () => pm.expect(json.thisMonthTotal).to.not.be.undefined);",
+                  "console.log('Summary:', JSON.stringify(json, null, 2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/analytics/group/{{group_id}}/summary", "host": ["{{base_url}}"], "path": ["api","analytics","group","{{group_id}}","summary"] }
+          }
+        },
+
+        {
+          "name": "Daily Totals (July 2025)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "console.log('Daily data:', pm.response.json());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/group/{{group_id}}/daily?from=2025-07-01&to=2025-07-31",
+              "host": ["{{base_url}}"],
+              "path": ["api","analytics","group","{{group_id}}","daily"],
+              "query": [
+                { "key": "from", "value": "2025-07-01" },
+                { "key": "to",   "value": "2025-07-31" }
+              ]
+            }
+          }
+        },
+
+        {
+          "name": "Weekly Totals (2025)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "console.log('Weekly data:', pm.response.json());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/group/{{group_id}}/weekly?year=2025",
+              "host": ["{{base_url}}"],
+              "path": ["api","analytics","group","{{group_id}}","weekly"],
+              "query": [{ "key": "year", "value": "2025" }]
+            }
+          }
+        },
+
+        {
+          "name": "Monthly Totals (2025)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "console.log('Monthly data:', pm.response.json());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/group/{{group_id}}/monthly?year=2025",
+              "host": ["{{base_url}}"],
+              "path": ["api","analytics","group","{{group_id}}","monthly"],
+              "query": [{ "key": "year", "value": "2025" }]
+            }
+          }
+        },
+
+        {
+          "name": "Category Breakdown (Pie Chart Data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.response.json().forEach(d => console.log(`  ${d.label}: $${d.value}`));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/analytics/group/{{group_id}}/categories", "host": ["{{base_url}}"], "path": ["api","analytics","group","{{group_id}}","categories"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "06 - Edge Cases & Security",
+      "description": "Verify authentication guards and error handling.",
+      "item": [
+
+        {
+          "name": "Access Protected Route Without Token (should 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected without token', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/groups", "host": ["{{base_url}}"], "path": ["api","groups"] }
+          }
+        },
+
+        {
+          "name": "Access Protected Route With Expired/Bad Token (should 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with bad token', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer this.is.not.a.valid.jwt" }],
+            "url": { "raw": "{{base_url}}/api/groups", "host": ["{{base_url}}"], "path": ["api","groups"] }
+          }
+        },
+
+        {
+          "name": "Get Non-Existent Group (should 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400 for missing group', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/groups/999999", "host": ["{{base_url}}"], "path": ["api","groups","999999"] }
+          }
+        },
+
+        {
+          "name": "Register Duplicate Email (should 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns 400 for duplicate email', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Duplicate\",\n  \"email\": \"alice@demo.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('App is UP', () => pm.response.to.have.status(200));",
+                  "pm.test('Status UP', () => pm.expect(pm.response.json().status).to.equal('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/actuator/health", "host": ["{{base_url}}"], "path": ["actuator","health"] }
+          }
+        }
+
+      ]
+    }
+
+  ]
+}

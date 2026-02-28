@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${group.name})}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active" th:text="${group.name}">Group</li>
+        </ol>
+    </nav>
+
+    <!-- Group Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0" th:text="${group.name}">Group Name</h3>
+            <p class="text-muted" th:text="${group.description}">Description</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/groups/{id}/analytics(id=${group.id})}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-bar-chart"></i> Analytics
+            </a>
+            <a th:href="@{/groups/{id}/settlements(id=${group.id})}"
+               class="btn btn-outline-success btn-sm">
+                <i class="bi bi-cash-coin"></i> Settle Up
+            </a>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                <i class="bi bi-plus-circle"></i> Add Expense
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Summary Cards -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="small opacity-75">Today</div>
+                            <div class="fs-4 fw-bold"
+                                 th:text="${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(summary.todayTotal,1,2)}">
+                                $0.00
+                            </div>
+                        </div>
+                        <i class="bi bi-calendar-day fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="small opacity-75">This Week</div>
+                            <div class="fs-4 fw-bold"
+                                 th:text="${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(summary.thisWeekTotal,1,2)}">
+                                $0.00
+                            </div>
+                        </div>
+                        <i class="bi bi-calendar-week fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="small opacity-75">This Month</div>
+                            <div class="fs-4 fw-bold"
+                                 th:text="${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(summary.thisMonthTotal,1,2)}">
+                                $0.00
+                            </div>
+                        </div>
+                        <i class="bi bi-calendar-month fs-2 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Share Card -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <div class="row text-center g-0">
+                        <div class="col-md-4 border-end border-secondary">
+                            <div class="small opacity-75">Total I Paid</div>
+                            <div class="fs-5 fw-bold text-warning"
+                                 th:text="${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(myStats.totalIPaid,1,2)}">$0.00</div>
+                        </div>
+                        <div class="col-md-4 border-end border-secondary">
+                            <div class="small opacity-75">My Share (owed)</div>
+                            <div class="fs-5 fw-bold text-info"
+                                 th:text="${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(myStats.myShare,1,2)}">$0.00</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="small opacity-75">Net Balance</div>
+                            <div class="fs-5 fw-bold"
+                                 th:class="${myStats.netBalance >= 0} ? 'fs-5 fw-bold text-success' : 'fs-5 fw-bold text-danger'"
+                                 th:text="${myStats.netBalance >= 0} ? ('+' + ${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(myStats.netBalance,1,2)}) : (${group.defaultCurrency} + ' ' + ${#numbers.formatDecimal(myStats.netBalance,1,2)})">$0.00</div>
+                            <div class="small opacity-75 mt-1"
+                                 th:text="${myStats.netBalance >= 0} ? 'You are owed' : 'You owe'"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balances -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold border-0">
+                    <i class="bi bi-scale text-primary"></i> Balances
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li th:each="b : ${balances.balances}"
+                            class="list-group-item d-flex justify-content-between align-items-center">
+                            <span th:text="${b.userName}">User</span>
+                            <span th:class="${b.netBalance >= 0} ? 'badge bg-success' : 'badge bg-danger'"
+                                  th:text="${b.netBalance >= 0} ? '+' + ${#numbers.formatDecimal(b.netBalance,1,2)} : ${#numbers.formatDecimal(b.netBalance,1,2)}">
+                                $0.00
+                            </span>
+                        </li>
+                        <li th:if="${#lists.isEmpty(balances.balances)}"
+                            class="list-group-item text-muted text-center py-3">
+                            All settled up!
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold border-0 d-flex justify-content-between">
+                    <span><i class="bi bi-people text-primary"></i> Members</span>
+                    <button class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        + Add Member
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li th:each="m : ${members}"
+                            class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-circle bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width:36px;height:36px;font-size:14px"
+                                     th:text="${#strings.substring(m.user.name,0,1).toUpperCase()}">A</div>
+                                <div>
+                                    <div class="fw-semibold small" th:text="${m.user.name}">Name</div>
+                                    <div class="text-muted" style="font-size:11px" th:text="${m.user.email}">email</div>
+                                </div>
+                            </div>
+                            <span th:class="${m.role.name() == 'ADMIN'} ? 'badge bg-warning text-dark' : 'badge bg-secondary'"
+                                  th:text="${m.role}">MEMBER</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold border-0">
+                    <i class="bi bi-receipt text-primary"></i> Expenses
+                    <span class="badge bg-secondary ms-1" id="expenseCount"></span>
+                </div>
+                <div class="card-body p-0" id="expensesContainer">
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm"></div> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal fade" id="addExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">Add Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Description *</label>
+                        <input type="text" id="expDesc" class="form-control" placeholder="Dinner at Olive Garden"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Amount *</label>
+                        <div class="input-group">
+                            <span class="input-group-text" th:text="${group.defaultCurrency}">$</span>
+                            <input type="number" id="expAmount" class="form-control" placeholder="0.00"
+                                   min="0.01" step="0.01"/>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Category</label>
+                        <select id="expCategory" class="form-select">
+                            <option value="FOOD">Food</option>
+                            <option value="TRANSPORT">Transport</option>
+                            <option value="ACCOMMODATION">Accommodation</option>
+                            <option value="ENTERTAINMENT">Entertainment</option>
+                            <option value="SHOPPING">Shopping</option>
+                            <option value="UTILITIES">Utilities</option>
+                            <option value="HEALTH">Health</option>
+                            <option value="TRAVEL">Travel</option>
+                            <option value="GROCERIES">Groceries</option>
+                            <option value="RENT">Rent</option>
+                            <option value="OTHER" selected>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Date</label>
+                        <input type="date" id="expDate" class="form-control"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Paid By</label>
+                        <select id="expPaidBy" class="form-select">
+                            <option th:each="m : ${members}"
+                                    th:value="${m.user.id}"
+                                    th:text="${m.user.name}">Member</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Split Type</label>
+                        <select id="expSplitType" class="form-select">
+                            <option value="EQUAL">Split Equally</option>
+                            <option value="EXACT">Exact Amounts</option>
+                            <option value="PERCENTAGE">By Percentage</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Notes</label>
+                        <input type="text" id="expNotes" class="form-control" placeholder="Optional notes"/>
+                    </div>
+                </div>
+                <div id="expError" class="alert alert-danger small py-2 mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" th:onclick="'addExpense(' + ${group.id} + ')'">
+                    <i class="bi bi-plus-circle"></i> Add Expense
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">Add Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-semibold">Member Email</label>
+                <input type="email" id="newMemberEmail" class="form-control"
+                       placeholder="friend@example.com"/>
+                <div id="memberError" class="alert alert-danger small py-2 mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" th:onclick="'addMember(' + ${group.id} + ')'">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ AI Expense Classifier ══════════════════════════════════════════════ -->
+
+<!-- Floating AI button -->
+<button id="aiToggleBtn"
+        class="btn btn-warning rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+        style="position:fixed;bottom:28px;right:28px;width:60px;height:60px;z-index:1050;font-size:24px;"
+        onclick="toggleAiPanel()" title="AI Expense Classifier">
+    <i class="bi bi-stars"></i>
+</button>
+
+<!-- AI Slide-up Panel -->
+<div id="aiPanel"
+     class="card border-0 shadow-lg"
+     style="position:fixed;bottom:100px;right:28px;width:420px;max-width:95vw;z-index:1049;display:none;">
+    <div class="card-header bg-warning fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-stars"></i> AI Expense Classifier</span>
+        <button class="btn-close btn-close-white" onclick="toggleAiPanel()"></button>
+    </div>
+
+    <!-- Step 1: Input -->
+    <div id="aiStep1" class="card-body">
+        <p class="text-muted small mb-2">
+            Tell me what you bought — I'll figure out what's shared vs personal.
+            <br>E.g. <em>"bought potatoes, shampoo, dinner with gf, paid rent"</em>
+        </p>
+        <div class="input-group mb-2">
+            <textarea id="aiInputText" class="form-control" rows="3"
+                      placeholder="Type or speak your expenses..."></textarea>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm flex-shrink-0" id="voiceBtn"
+                    onclick="startVoice()" title="Voice input">
+                <i class="bi bi-mic-fill"></i> Voice
+            </button>
+            <button class="btn btn-warning w-100 fw-semibold" onclick="classifyExpenses()">
+                <i class="bi bi-stars"></i> Classify
+            </button>
+        </div>
+        <div id="aiError" class="alert alert-danger small py-2 mt-2 d-none"></div>
+    </div>
+
+    <!-- Step 2: Review classified items -->
+    <div id="aiStep2" class="card-body d-none">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold small" id="aiSummaryMsg"></span>
+            <button class="btn btn-link btn-sm p-0" onclick="backToStep1()">
+                <i class="bi bi-arrow-left"></i> Edit
+            </button>
+        </div>
+        <div id="aiItemsList"></div>
+        <div id="aiConfirmError" class="alert alert-danger small py-2 mt-2 d-none"></div>
+        <button class="btn btn-success w-100 fw-semibold mt-2" onclick="confirmExpenses()">
+            <i class="bi bi-check-circle"></i> Confirm & Save
+        </button>
+    </div>
+
+    <!-- Step 3: Done -->
+    <div id="aiStep3" class="card-body text-center d-none">
+        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+        <p class="fw-semibold mt-2" id="aiDoneMsg">Expenses saved!</p>
+        <button class="btn btn-primary btn-sm" onclick="window.location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Page
+        </button>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script th:inline="javascript">
+const GROUP_ID = /*[[${group.id}]]*/ 0;
+
+// Load expenses on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadExpenses(GROUP_ID);
+    // Set today's date as default
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+
+    // WebSocket real-time updates
+    connectWebSocket(GROUP_ID);
+});
+
+async function loadExpenses(groupId) {
+    try {
+        const data = await apiGet(`/api/expenses/group/${groupId}`);
+        renderExpenses(data);
+    } catch (e) {
+        document.getElementById('expensesContainer').innerHTML =
+            '<div class="text-center py-4 text-danger">Failed to load expenses</div>';
+    }
+}
+
+function renderExpenses(expenses) {
+    const container = document.getElementById('expensesContainer');
+    document.getElementById('expenseCount').textContent = expenses.length;
+
+    if (!expenses.length) {
+        container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-receipt fs-1"></i><p class="mt-2">No expenses yet. Add one!</p></div>';
+        return;
+    }
+
+    const rows = expenses.map(e => `
+        <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+            <div class="d-flex gap-3">
+                <div class="text-center" style="min-width:44px">
+                    <div class="badge rounded-pill bg-${categoryColor(e.category)} px-2"
+                         style="font-size:10px">${e.category || 'OTHER'}</div>
+                </div>
+                <div>
+                    <div class="fw-semibold">${e.description}</div>
+                    <div class="text-muted small">
+                        Paid by <strong>${e.paidBy?.name || '?'}</strong> &bull;
+                        ${e.expenseDate} &bull;
+                        <span class="badge bg-light text-dark border">${e.splitType}</span>
+                    </div>
+                    ${e.notes ? `<div class="text-muted small fst-italic">${e.notes}</div>` : ''}
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold text-primary">${e.currency} ${parseFloat(e.amount).toFixed(2)}</div>
+                ${e.settled ? '<span class="badge bg-success small">Settled</span>' : '<span class="badge bg-warning text-dark small">Pending</span>'}
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `<div class="list-group list-group-flush">${rows}</div>`;
+}
+
+function categoryColor(cat) {
+    const map = {FOOD:'success', TRANSPORT:'info', ACCOMMODATION:'primary',
+                 ENTERTAINMENT:'warning', SHOPPING:'danger', TRAVEL:'purple',
+                 UTILITIES:'secondary', HEALTH:'danger', OTHER:'secondary'};
+    return map[cat] || 'secondary';
+}
+
+async function addExpense(groupId) {
+    const errEl = document.getElementById('expError');
+    const btn   = document.querySelector('#addExpenseModal .modal-footer .btn-primary');
+    errEl.classList.add('d-none');
+
+    const description = document.getElementById('expDesc').value.trim();
+    const amount      = parseFloat(document.getElementById('expAmount').value);
+
+    if (!description || !amount || amount <= 0) {
+        errEl.textContent = 'Description and a valid amount are required';
+        errEl.classList.remove('d-none');
+        return;
+    }
+
+    const payload = {
+        description,
+        amount,
+        groupId,
+        paidByUserId:   parseInt(document.getElementById('expPaidBy').value),
+        splitType:      document.getElementById('expSplitType').value,
+        category:       document.getElementById('expCategory').value,
+        expenseDate:    document.getElementById('expDate').value,
+        notes:          document.getElementById('expNotes').value
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Adding...';
+
+    try {
+        const res = await apiPost('/api/expenses', payload);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            errEl.textContent = err.detail || err.message || 'Failed to add expense';
+            errEl.classList.remove('d-none');
+            return;
+        }
+        // Reload page so summary cards (Today/Week/Month) also refresh
+        window.location.reload();
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('d-none');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-plus-circle"></i> Add Expense';
+    }
+}
+
+async function addMember(groupId) {
+    const email = document.getElementById('newMemberEmail').value.trim();
+    const errEl = document.getElementById('memberError');
+    const btn   = document.querySelector('#addMemberModal .modal-footer .btn-primary');
+    errEl.classList.add('d-none');
+
+    if (!email) { errEl.textContent = 'Email required'; errEl.classList.remove('d-none'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+
+    try {
+        const res = await apiPost(`/api/groups/${groupId}/members?email=${encodeURIComponent(email)}`, {});
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            errEl.textContent = err.detail || err.message || 'Failed to add member';
+            errEl.classList.remove('d-none');
+            return;
+        }
+        window.location.reload();
+    } catch (e) {
+        errEl.textContent = 'Network error';
+        errEl.classList.remove('d-none');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Add';
+    }
+}
+
+function connectWebSocket(groupId) {
+    if (typeof StompJs === 'undefined') return;
+    const client = new StompJs.Client({ webSocketFactory: () => new SockJS('/ws') });
+    client.onConnect = () => {
+        client.subscribe(`/topic/group/${groupId}/expenses`, () => loadExpenses(groupId));
+    };
+    client.activate();
+}
+</script>
+
+<script th:inline="javascript">
+// ── AI Classifier ─────────────────────────────────────────────────────────────
+let aiClassifiedItems = [];
+
+function toggleAiPanel() {
+    const panel = document.getElementById('aiPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function backToStep1() {
+    document.getElementById('aiStep1').classList.remove('d-none');
+    document.getElementById('aiStep2').classList.add('d-none');
+}
+
+async function classifyExpenses() {
+    const text  = document.getElementById('aiInputText').value.trim();
+    const errEl = document.getElementById('aiError');
+    errEl.classList.add('d-none');
+
+    if (!text) {
+        errEl.textContent = 'Please describe your expenses first';
+        errEl.classList.remove('d-none');
+        return;
+    }
+
+    const btn = document.querySelector('#aiStep1 .btn-warning');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Classifying...';
+
+    try {
+        const res = await apiPost('/api/ai/classify', {
+            text,
+            groupId: GROUP_ID,
+            currency: null
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            errEl.textContent = err.detail || err.message || 'Classification failed';
+            errEl.classList.remove('d-none');
+            return;
+        }
+
+        const data = await res.json();
+        aiClassifiedItems = data.items || [];
+        document.getElementById('aiSummaryMsg').textContent = data.message || '';
+        renderAiItems(aiClassifiedItems);
+        document.getElementById('aiStep1').classList.add('d-none');
+        document.getElementById('aiStep2').classList.remove('d-none');
+
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('d-none');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars"></i> Classify';
+    }
+}
+
+function renderAiItems(items) {
+    const container = document.getElementById('aiItemsList');
+    container.innerHTML = items.map((item, i) => {
+        const typeColor = { GROUP_SHARED: 'success', PERSONAL: 'danger', NEEDS_CONFIRMATION: 'warning' };
+        const typeLabel = { GROUP_SHARED: 'Group Shared', PERSONAL: 'Personal', NEEDS_CONFIRMATION: 'Confirm?' };
+        return `
+        <div class="border rounded p-2 mb-2 small" id="aiItem-${i}">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">${item.description || item.itemId}</div>
+                    <div class="text-muted" style="font-size:11px">${item.reasoning}</div>
+                </div>
+                <span class="badge bg-${typeColor[item.type] || 'secondary'}">${typeLabel[item.type] || item.type}</span>
+            </div>
+            <div class="row g-1 mt-1">
+                <div class="col-5">
+                    <input type="number" class="form-control form-control-sm" placeholder="Amount"
+                           id="amount-${i}" value="${item.amount || ''}" min="0.01" step="0.01"/>
+                </div>
+                <div class="col-7">
+                    <select class="form-select form-select-sm" id="type-${i}">
+                        <option value="GROUP_SHARED" ${item.type === 'GROUP_SHARED' ? 'selected' : ''}>Group Shared</option>
+                        <option value="PERSONAL"     ${item.type === 'PERSONAL'     ? 'selected' : ''}>Personal</option>
+                    </select>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function confirmExpenses() {
+    const text   = document.getElementById('aiInputText').value.trim();
+    const errEl  = document.getElementById('aiConfirmError');
+    const btn    = document.querySelector('#aiStep2 .btn-success');
+    errEl.classList.add('d-none');
+
+    // Build confirmed items from the rendered form
+    const confirmedItems = aiClassifiedItems.map((item, i) => ({
+        itemId:       item.itemId,
+        description:  item.description || item.itemId,
+        amount:       parseFloat(document.getElementById(`amount-${i}`).value) || null,
+        category:     item.category || 'OTHER',
+        type:         document.getElementById(`type-${i}`).value,
+        splitPercent: 50,
+        expenseDate:  new Date().toISOString().split('T')[0],
+        paidByUserId: null   // null = backend will use the current user
+    }));
+
+    // Validate at least one item has an amount
+    if (!confirmedItems.some(c => c.amount && c.amount > 0)) {
+        errEl.textContent = 'Please enter amounts for at least one expense';
+        errEl.classList.remove('d-none');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    try {
+        const res = await apiPost('/api/ai/confirm', {
+            groupId:      GROUP_ID,
+            originalText: text,
+            items:        confirmedItems
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            errEl.textContent = err.detail || err.message || 'Failed to save expenses';
+            errEl.classList.remove('d-none');
+            return;
+        }
+
+        const result = await res.json();
+        document.getElementById('aiStep2').classList.add('d-none');
+        document.getElementById('aiStep3').classList.remove('d-none');
+        document.getElementById('aiDoneMsg').textContent = result.message || 'Expenses saved!';
+
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('d-none');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm & Save';
+    }
+}
+
+// ── Voice Input (Web Speech API) ──────────────────────────────────────────────
+function startVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert('Voice input is not supported in your browser. Try Chrome.');
+        return;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = 'en-IN';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    const btn = document.getElementById('voiceBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Listening...';
+    btn.disabled = true;
+
+    rec.start();
+
+    rec.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const textarea = document.getElementById('aiInputText');
+        textarea.value = textarea.value ? textarea.value + ', ' + transcript : transcript;
+    };
+
+    rec.onend = () => {
+        btn.innerHTML = '<i class="bi bi-mic-fill"></i> Voice';
+        btn.disabled = false;
+    };
+
+    rec.onerror = (event) => {
+        btn.innerHTML = '<i class="bi bi-mic-fill"></i> Voice';
+        btn.disabled = false;
+        if (event.error !== 'no-speech') {
+            document.getElementById('aiError').textContent = 'Voice error: ' + event.error;
+            document.getElementById('aiError').classList.remove('d-none');
+        }
+    };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Settlements')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: navbar}"></div>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/groups/{id}(id=${group.id})}" th:text="${group.name}">Group</a></li>
+            <li class="breadcrumb-item active">Settle Up</li>
+        </ol>
+    </nav>
+
+    <h4 class="fw-bold mb-4">
+        <i class="bi bi-cash-coin text-success"></i>
+        Settle Up — <span th:text="${group.name}">Group</span>
+    </h4>
+
+    <div class="row g-4">
+        <!-- Optimal Settlement Plan -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold border-0">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    Suggested Settlements
+                    <small class="text-muted ms-2">(minimum transactions)</small>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(balances.suggestions)}"
+                         class="text-center py-5 text-success">
+                        <i class="bi bi-check-circle-fill display-4"></i>
+                        <p class="mt-2 fw-semibold">All settled up!</p>
+                    </div>
+                    <div th:each="s : ${balances.suggestions}"
+                         class="d-flex align-items-center gap-3 p-3 border-bottom">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-danger-subtle text-danger fw-semibold"
+                                      th:text="${s.fromUserName}">Payer</span>
+                                <i class="bi bi-arrow-right text-muted"></i>
+                                <span class="badge bg-success-subtle text-success fw-semibold"
+                                      th:text="${s.toUserName}">Receiver</span>
+                            </div>
+                            <div class="fw-bold text-primary mt-1"
+                                 th:text="${s.currency} + ' ' + ${#numbers.formatDecimal(s.amount,1,2)}">$0.00</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success"
+                                th:onclick="'recordSettlement(' + ${group.id} + ',' + ${s.fromUserId} + ',' + ${s.toUserId} + ',' + ${s.amount} + ')'">
+                            <i class="bi bi-check2"></i> Mark Paid
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Settle Up -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold border-0">
+                    <i class="bi bi-pencil-square text-primary"></i> Record Custom Payment
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Who Paid?</label>
+                        <select id="payerId" class="form-select">
+                            <option th:each="b : ${balances.balances}"
+                                    th:value="${b.userId}" th:text="${b.userName}">User</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Paid To</label>
+                        <select id="receiverId" class="form-select">
+                            <option th:each="b : ${balances.balances}"
+                                    th:value="${b.userId}" th:text="${b.userName}">User</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text" th:text="${group.defaultCurrency}">USD</span>
+                            <input type="number" id="settleAmount" class="form-control"
+                                   placeholder="0.00" min="0.01" step="0.01"/>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Payment Reference (optional)</label>
+                        <input type="text" id="paymentRef" class="form-control"
+                               placeholder="UPI/Transaction ID"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes (optional)</label>
+                        <input type="text" id="settleNotes" class="form-control" placeholder="Cash payment"/>
+                    </div>
+                    <div id="settleError" class="alert alert-danger small py-2 d-none"></div>
+                    <button class="btn btn-success w-100 fw-semibold"
+                            th:onclick="'manualSettle(' + ${group.id} + ')'">
+                        <i class="bi bi-cash-coin"></i> Record Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settlement History -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold border-0">
+                    <i class="bi bi-clock-history text-primary"></i> Settlement History
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Payer</th>
+                                    <th>Receiver</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="s : ${history}">
+                                    <td th:text="${s.payer.name}">Payer</td>
+                                    <td th:text="${s.receiver.name}">Receiver</td>
+                                    <td class="fw-semibold text-primary"
+                                        th:text="${s.currency} + ' ' + ${#numbers.formatDecimal(s.amount,1,2)}">$0.00</td>
+                                    <td>
+                                        <span th:class="${s.status.name() == 'COMPLETED'} ? 'badge bg-success' : (${s.status.name() == 'PENDING'} ? 'badge bg-warning text-dark' : 'badge bg-secondary')"
+                                              th:text="${s.status}">COMPLETED</span>
+                                    </td>
+                                    <td th:text="${s.settledAt != null} ? ${#temporals.format(s.settledAt,'MMM d, yyyy')} : '-'">date</td>
+                                    <td class="small text-muted" th:text="${s.paymentReference ?: '-'}">ref</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(history)}">
+                                    <td colspan="6" class="text-center py-4 text-muted">No settlements yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<script th:inline="javascript">
+const GROUP_ID = /*[[${group.id}]]*/ 0;
+
+async function recordSettlement(groupId, payerId, receiverId, amount) {
+    await submitSettlement(groupId, payerId, receiverId, amount, '', '');
+}
+
+async function manualSettle(groupId) {
+    const payerId    = parseInt(document.getElementById('payerId').value);
+    const receiverId = parseInt(document.getElementById('receiverId').value);
+    const amount     = parseFloat(document.getElementById('settleAmount').value);
+    const ref        = document.getElementById('paymentRef').value;
+    const notes      = document.getElementById('settleNotes').value;
+    const errEl      = document.getElementById('settleError');
+    errEl.classList.add('d-none');
+
+    if (payerId === receiverId) {
+        errEl.textContent = 'Payer and receiver must be different';
+        errEl.classList.remove('d-none');
+        return;
+    }
+    if (!amount || amount <= 0) {
+        errEl.textContent = 'Enter a valid amount';
+        errEl.classList.remove('d-none');
+        return;
+    }
+    await submitSettlement(groupId, payerId, receiverId, amount, ref, notes);
+}
+
+async function submitSettlement(groupId, payerId, receiverId, amount, paymentReference, notes) {
+    const errEl = document.getElementById('settleError');
+    errEl.classList.add('d-none');
+
+    try {
+        const res = await apiPost('/api/settlements', {
+            groupId, payerId, receiverId, amount, notes, paymentReference
+        });
+        if (res.ok) {
+            window.location.reload();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            errEl.textContent = err.detail || err.message || 'Failed to record settlement';
+            errEl.classList.remove('d-none');
+        }
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('d-none');
+    }
+}
+</script>
+</body>
+</html>
