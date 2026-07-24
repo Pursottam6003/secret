@@ -121,16 +121,15 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-  # KafkaTemplate bean must exist because ExpenseEventProducer
-  # constructor-injects it directly. Do NOT exclude
-  # KafkaAutoConfiguration in prod, or the app fails to start.
+  # Both KafkaTemplate and RedisConnectionFactory beans must exist
+  # because ExpenseEventProducer and RedisConfig constructor-inject
+  # them directly. Do NOT exclude their autoconfiguration in prod,
+  # or the app fails to start - even without a reachable broker/host,
+  # the beans just need to be created; connections happen lazily.
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
-  # Redis has no hard constructor dependency, only @Cacheable /
-  # @CacheEvict annotations, so it's safe to exclude until you
-  # provision a managed Redis instance.
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
