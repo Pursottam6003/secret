@@ -26,7 +26,7 @@ spring:
 # ─── App-level config ─────────────────────────────────────────
 app:
   jwt:
-    secret: ${JWT_SECRET:3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b}
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000
     refresh-expiration-ms: 604800000
 
@@ -54,7 +54,7 @@ management:
         include: health,info,metrics,prometheus
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: always
 
@@ -106,7 +106,8 @@ spring:
       on-profile: prod
 
   datasource:
-    url: jdbc:postgresql://postgres:5432/expensedb
+    url: jdbc:postgresql://${DB_HOST}/${DB_NAME}?sslmode=require
+
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
@@ -120,10 +121,11 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-  kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
-
-  data:
-    redis:
-      host: ${SPRING_DATA_REDIS_HOST:redis}
-      port: 6379
+    # Kafka and Redis are not provisioned on Render yet.
+    # Once you add managed instances, remove this exclusion block
+    # and set SPRING_KAFKA_BOOTSTRAP_SERVERS / SPRING_DATA_REDIS_HOST.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
