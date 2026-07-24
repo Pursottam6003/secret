@@ -124,6 +124,8 @@ spring:
     # Kafka and Redis are not provisioned on Render yet.
     # Once you add managed instances, remove this exclusion block
     # and set SPRING_KAFKA_BOOTSTRAP_SERVERS / SPRING_DATA_REDIS_HOST.
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
