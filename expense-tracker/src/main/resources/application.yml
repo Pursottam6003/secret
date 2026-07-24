@@ -23,7 +23,7 @@ spring:
       write-dates-as-timestamps: false
     time-zone: UTC
 
-# ─── App-level config ─────────────────────────────────────────
+# --- App-level config ---------------------------------------------
 app:
   jwt:
     secret: ${JWT_SECRET}
@@ -38,7 +38,7 @@ app:
     balance-ttl-seconds: 300
     analytics-ttl-seconds: 600
 
-# ─── Swagger ──────────────────────────────────────────────────
+# --- Swagger --------------------------------------------------------
 springdoc:
   api-docs:
     path: /api-docs
@@ -46,7 +46,7 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-# ─── Actuator ─────────────────────────────────────────────────
+# --- Actuator ---------------------------------------------------------
 management:
   endpoints:
     web:
@@ -96,7 +96,8 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 # ==============================================================
-# PROD PROFILE (PostgreSQL + Kafka + Redis)
+# PROD PROFILE (Neon PostgreSQL - Kafka bean created but broker
+# optional; Redis excluded until a managed instance is added)
 # ==============================================================
 
 ---
@@ -107,10 +108,9 @@ spring:
 
   datasource:
     url: jdbc:postgresql://${DB_HOST}/${DB_NAME}?sslmode=require
-
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -121,13 +121,16 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-    # Kafka and Redis are not provisioned on Render yet.
-    # Once you add managed instances, remove this exclusion block
-    # and set SPRING_KAFKA_BOOTSTRAP_SERVERS / SPRING_DATA_REDIS_HOST.
+  # KafkaTemplate bean must exist because ExpenseEventProducer
+  # constructor-injects it directly. Do NOT exclude
+  # KafkaAutoConfiguration in prod, or the app fails to start.
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+  # Redis has no hard constructor dependency, only @Cacheable /
+  # @CacheEvict annotations, so it's safe to exclude until you
+  # provision a managed Redis instance.
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
