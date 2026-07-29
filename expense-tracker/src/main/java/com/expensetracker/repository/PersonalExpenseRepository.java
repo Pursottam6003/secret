@@ -26,6 +26,9 @@ public interface PersonalExpenseRepository extends JpaRepository<PersonalExpense
     @Query("SELECT p.category, COALESCE(SUM(p.amount), 0) FROM PersonalExpense p WHERE p.user.id = :userId GROUP BY p.category")
     List<Object[]> sumAmountByCategoryForUser(@Param("userId") Long userId);
 
-    @Query("SELECT FUNCTION('MONTH', p.expenseDate), COALESCE(SUM(p.amount), 0) FROM PersonalExpense p WHERE p.user.id = :userId AND FUNCTION('YEAR', p.expenseDate) = :year GROUP BY FUNCTION('MONTH', p.expenseDate) ORDER BY FUNCTION('MONTH', p.expenseDate)")
+    @Query(value = "SELECT EXTRACT(MONTH FROM p.expense_date) AS month, COALESCE(SUM(p.amount), 0) AS total " +
+            "FROM personal_expenses p WHERE p.user_id = :userId AND EXTRACT(YEAR FROM p.expense_date) = :year " +
+            "GROUP BY EXTRACT(MONTH FROM p.expense_date) ORDER BY EXTRACT(MONTH FROM p.expense_date)",
+            nativeQuery = true)
     List<Object[]> sumAmountByMonthForUser(@Param("userId") Long userId, @Param("year") int year);
 }

@@ -14,6 +14,7 @@ import com.expensetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -32,6 +33,8 @@ public class AiExpenseService {
     private final UserRepository userRepository;
     private final ExpenseService expenseService;
     private final PersonalExpenseService personalExpenseService;
+    private final OpenAiExpenseClassifierService openAiClassifier;
+
 
     // ─── Keyword dictionaries ─────────────────────────────────────────────────
 
@@ -69,15 +72,11 @@ public class AiExpenseService {
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
         String effectiveCurrency = currency != null ? currency : group.getDefaultCurrency();
 
-        // Split input by comma, "and", or semicolon to get individual items
-        String[] rawItems = text.split("(?i),|\\band\\b|;");
+        List<AiClassifiedItem> classified = openAiClassifier.classify(text);
 
-        List<AiClassifiedItem> classified = new ArrayList<>();
-        for (int i = 0; i < rawItems.length; i++) {
-            String item = rawItems[i].trim();
-            if (!item.isBlank()) {
-                classified.add(classifyItem("item-" + i, item, effectiveCurrency));
-            }
+        // Fall back to the old keyword-based splitter if OpenAI isn't configured or failed
+        if (classified == null) {
+            classified = classifyWithKeywords(text, effectiveCurrency);
         }
 
         boolean allClassified = classified.stream()
@@ -95,6 +94,18 @@ public class AiExpenseService {
 
     // ─── Confirm and persist ──────────────────────────────────────────────────
 
+    // Rename your OLD classify() body's for-loop into this method, unchanged:
+    private List<AiClassifiedItem> classifyWithKeywords(String text, String currency) {
+        String[] rawItems = text.split("(?i),|\\band\\b|;");
+        List<AiClassifiedItem> classified = new ArrayList<>();
+        for (int i = 0; i < rawItems.length; i++) {
+            String item = rawItems[i].trim();
+            if (!item.isBlank()) {
+                classified.add(classifyItem("item-" + i, item, currency));
+            }
+        }
+        return classified;
+    }
     public Map<String, Object> confirmAndCreate(ConfirmExpensesRequest req, String userEmail) {
         int groupExpensesCreated = 0;
         int personalExpensesCreated = 0;

@@ -40,11 +40,33 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
                                           @Param("from") LocalDate from,
                                           @Param("to") LocalDate to);
 
-    @Query("SELECT FUNCTION('WEEK', e.expenseDate), COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.group.id = :groupId AND FUNCTION('YEAR', e.expenseDate) = :year GROUP BY FUNCTION('WEEK', e.expenseDate) ORDER BY FUNCTION('WEEK', e.expenseDate)")
-    List<Object[]> sumAmountByWeekForGroup(@Param("groupId") Long groupId, @Param("year") int year);
-
-    @Query("SELECT FUNCTION('MONTH', e.expenseDate), COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.group.id = :groupId AND FUNCTION('YEAR', e.expenseDate) = :year GROUP BY FUNCTION('MONTH', e.expenseDate) ORDER BY FUNCTION('MONTH', e.expenseDate)")
-    List<Object[]> sumAmountByMonthForGroup(@Param("groupId") Long groupId, @Param("year") int year);
+    @Query("""
+    SELECT EXTRACT(WEEK FROM e.expenseDate), COALESCE(SUM(e.amount), 0)
+    FROM Expense e
+    WHERE e.group.id = :groupId
+    AND e.expenseDate BETWEEN :startDate AND :endDate
+    GROUP BY EXTRACT(WEEK FROM e.expenseDate)
+    ORDER BY EXTRACT(WEEK FROM e.expenseDate)
+    """)
+    List<Object[]> sumAmountByWeekForGroup(
+            @Param("groupId") Long groupId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+//
+    @Query("""
+    SELECT EXTRACT(MONTH FROM e.expenseDate), COALESCE(SUM(e.amount), 0)
+    FROM Expense e
+    WHERE e.group.id = :groupId
+    AND e.expenseDate BETWEEN :startDate AND :endDate
+    GROUP BY EXTRACT(MONTH FROM e.expenseDate)
+    ORDER BY EXTRACT(MONTH FROM e.expenseDate)
+    """)
+    List<Object[]> sumAmountByMonthForGroup(
+            @Param("groupId") Long groupId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+//    @Query("SELECT FUNCTION('MONTH', e.expenseDate), COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.group.id = :groupId AND FUNCTION('YEAR', e.expenseDate) = :year GROUP BY FUNCTION('MONTH', e.expenseDate) ORDER BY FUNCTION('MONTH', e.expenseDate)")
+//    List<Object[]> sumAmountByMonthForGroup(@Param("groupId") Long groupId, @Param("year") int year);
 
     @Query("SELECT e FROM Expense e JOIN e.splits s WHERE s.user.id = :userId ORDER BY e.expenseDate DESC")
     List<Expense> findAllExpensesInvolvingUser(@Param("userId") Long userId);

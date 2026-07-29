@@ -29,6 +29,18 @@ public class PersonalExpenseService {
         User user = getUser(userEmail);
         return personalExpenseRepository.save(buildExpense(req, user, "MANUAL", null));
     }
+    private BigDecimal toBigDecimalValue(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
+        if (value instanceof Number) return new BigDecimal(((Number) value).doubleValue());
+        return new BigDecimal(value.toString());
+    }
+
+    private int toIntValue(Object value) {
+        if (value == null) return 0;
+        if (value instanceof Number) return ((Number) value).intValue();
+        return Integer.parseInt(value.toString());
+    }
 
     @Transactional
     public PersonalExpense createFromAi(PersonalExpenseRequest req, String userEmail, String originalText) {
@@ -46,6 +58,7 @@ public class PersonalExpenseService {
     public PersonalSummary getMySummary(String userEmail) {
         User user = getUser(userEmail);
         LocalDate now = LocalDate.now();
+        System.out.println("user details in summary " + user);
 
         BigDecimal todayTotal = safe(personalExpenseRepository.sumAmountByUserAndDateRange(user.getId(), now, now));
         BigDecimal weekTotal  = safe(personalExpenseRepository.sumAmountByUserAndDateRange(
@@ -57,17 +70,17 @@ public class PersonalExpenseService {
         for (Object[] row : personalExpenseRepository.sumAmountByCategoryForUser(user.getId())) {
             categories.add(CategoryBreakdown.builder()
                     .category(row[0] != null ? row[0].toString() : "OTHER")
-                    .total((BigDecimal) row[1])
+                    .total(toBigDecimalValue(row[1]))
                     .build());
         }
 
         List<MonthlyTotal> monthly = new ArrayList<>();
         int year = now.getYear();
         for (Object[] row : personalExpenseRepository.sumAmountByMonthForUser(user.getId(), year)) {
-            int month = ((Number) row[0]).intValue();
+            int month = toIntValue(row[0]);
             monthly.add(MonthlyTotal.builder()
                     .month(Month.of(month).name())
-                    .total((BigDecimal) row[1])
+                    .total(toBigDecimalValue(row[1]))
                     .build());
         }
 
@@ -79,6 +92,8 @@ public class PersonalExpenseService {
                 .monthlyTotals(monthly)
                 .build();
     }
+
+
 
     @Transactional
     public void delete(Long expenseId, String userEmail) {

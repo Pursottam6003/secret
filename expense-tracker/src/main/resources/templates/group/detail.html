@@ -228,20 +228,28 @@
                         <label class="form-label fw-semibold">Date</label>
                         <input type="date" id="expDate" class="form-control"/>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="expSplitType" class="form-label">Split Type *</label>
+                        <select id="expSplitType" class="form-select" required onchange="updateSplitInputs()">
+                            <option value="EQUAL">Split Equally</option>
+                            <option value="EXACT">Exact Amounts</option>
+                            <option value="PERCENTAGE">By Percentage</option>
+                        </select>
+                    </div>
+                    <div id="splitInputSection" class="mb-3 p-3 border rounded bg-light" style="display:none;">
+                        <label class="form-label fw-semibold">
+                            <span id="splitLabel">Select who splits this expense:</span>
+                        </label>
+                        <div id="splitInputs"></div>
+                        <div id="splitValidationMsg" class="alert alert-warning small py-2 mt-2 d-none"></div>
+                    </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Paid By</label>
                         <select id="expPaidBy" class="form-select">
                             <option th:each="m : ${members}"
                                     th:value="${m.user.id}"
                                     th:text="${m.user.name}">Member</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Split Type</label>
-                        <select id="expSplitType" class="form-select">
-                            <option value="EQUAL">Split Equally</option>
-                            <option value="EXACT">Exact Amounts</option>
-                            <option value="PERCENTAGE">By Percentage</option>
                         </select>
                     </div>
                     <div class="col-12">
@@ -418,52 +426,74 @@ function categoryColor(cat) {
 }
 
 async function addExpense(groupId) {
+
     const errEl = document.getElementById('expError');
-    const btn   = document.querySelector('#addExpenseModal .modal-footer .btn-primary');
+    const btn = document.querySelector('#addExpenseModal .modal-footer .btn-primary');
+
     errEl.classList.add('d-none');
 
     const description = document.getElementById('expDesc').value.trim();
-    const amount      = parseFloat(document.getElementById('expAmount').value);
+    const amount = parseFloat(document.getElementById('expAmount').value);
 
     if (!description || !amount || amount <= 0) {
-        errEl.textContent = 'Description and a valid amount are required';
+        errEl.textContent = 'Description and valid amount are required';
         errEl.classList.remove('d-none');
+        return;
+    }
+
+    const splitPayload = buildSplitPayload();
+
+    console.log("splitPayload =", splitPayload);
+    if (!splitPayload) {
         return;
     }
 
     const payload = {
         description,
         amount,
-        groupId,
-        paidByUserId:   parseInt(document.getElementById('expPaidBy').value),
-        splitType:      document.getElementById('expSplitType').value,
-        category:       document.getElementById('expCategory').value,
-        expenseDate:    document.getElementById('expDate').value,
-        notes:          document.getElementById('expNotes').value
+        currency: "USD",
+        groupId: parseInt(groupId),
+        paidByUserId: parseInt(document.getElementById('expPaidBy').value),
+        splitType: document.getElementById('expSplitType').value,
+        category: document.getElementById('expCategory').value,
+        expenseDate: document.getElementById('expDate').value,
+        notes: document.getElementById('expNotes').value,
+
+        splitDetails: splitPayload.splitDetails,
+        participantIds: splitPayload.participantIds
     };
 
+    console.log("Payload");
+    console.log(payload);
+
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Adding...';
 
     try {
+
         const res = await apiPost('/api/expenses', payload);
+
         if (!res.ok) {
+
             const err = await res.json().catch(() => ({}));
-            errEl.textContent = err.detail || err.message || 'Failed to add expense';
+
+            errEl.textContent =
+                err.detail ||
+                err.message ||
+                "Failed";
+
             errEl.classList.remove('d-none');
+
             return;
         }
-        // Reload page so summary cards (Today/Week/Month) also refresh
+
         window.location.reload();
-    } catch (e) {
-        errEl.textContent = 'Network error. Please try again.';
-        errEl.classList.remove('d-none');
+
     } finally {
+
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-plus-circle"></i> Add Expense';
+
     }
 }
-
 async function addMember(groupId) {
     const email = document.getElementById('newMemberEmail').value.trim();
     const errEl = document.getElementById('memberError');

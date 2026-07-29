@@ -1,11 +1,8 @@
 spring:
-  profiles:
-    active: dev
-
   application:
     name: expense-tracker
 
-  # JPA / Hibernate
+  # JPA / Hibernate (Common)
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,44 +17,18 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
 
-  # Kafka
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: expense-tracker-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.expensetracker.*"
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
-  # Redis
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
-
   # Jackson
   jackson:
     serialization:
       write-dates-as-timestamps: false
     time-zone: UTC
 
-# ─── App-level config ─────────────────────────────────────────────────────────
+# --- App-level config ---------------------------------------------
 app:
   jwt:
-    secret: ${JWT_SECRET:3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b}
-    expiration-ms: 86400000       # 24h
-    refresh-expiration-ms: 604800000  # 7d
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
 
   ai:
     openai-api-key: ${OPENAI_API_KEY:your-key-here}
@@ -67,7 +38,7 @@ app:
     balance-ttl-seconds: 300
     analytics-ttl-seconds: 600
 
-# ─── Swagger / OpenAPI ────────────────────────────────────────────────────────
+# --- Swagger --------------------------------------------------------
 springdoc:
   api-docs:
     path: /api-docs
@@ -75,7 +46,7 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-# ─── Actuator ─────────────────────────────────────────────────────────────────
+# --- Actuator ---------------------------------------------------------
 management:
   endpoints:
     web:
@@ -83,10 +54,13 @@ management:
         include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always
+  health:
+    redis:
+      enabled: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: always
 
@@ -94,8 +68,11 @@ logging:
   level:
     org.springframework.web.servlet.resource: WARN
 
+# ==============================================================
+# DEV PROFILE (H2)
+# ==============================================================
+
 ---
-# ─── DEV profile (H2 in-memory) ───────────────────────────────────────────────
 spring:
   config:
     activate:
@@ -117,25 +94,29 @@ spring:
       enabled: true
       path: /h2-console
 
-  # Disable Kafka/Redis in dev to run without external infra
+  # Disable external infra in dev
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
+# ==============================================================
+# PROD PROFILE (Neon PostgreSQL - Kafka bean created but broker
+# optional; Redis excluded until a managed instance is added)
+# ==============================================================
+
 ---
-# ─── PROD profile (PostgreSQL) ────────────────────────────────────────────────
 spring:
   config:
     activate:
       on-profile: prod
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/expensedb
+    url: jdbc:postgresql://${DB_HOST}/${DB_NAME}?sslmode=require
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -143,8 +124,18 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Both KafkaTemplate and RedisConnectionFactory beans must exist
+  # because ExpenseEventProducer and RedisConfig constructor-inject
+  # them directly. Do NOT exclude their autoconfiguration in prod,
+  # or the app fails to start - even without a reachable broker/host,
+  # the beans just need to be created; connections happen lazily.
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}

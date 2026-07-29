@@ -74,6 +74,8 @@ public class WebController {
                              @AuthenticationPrincipal UserDetails user) {
         Group group = groupService.getGroup(id);
         int year = LocalDate.now().getYear();
+        System.out.println("Analytics for group: " + group + ", year: " + year);
+        System.out.println("Summary: " + analyticsService.getSummary(id));
 
         model.addAttribute("group", group);
         model.addAttribute("monthlyData", analyticsService.getMonthlyTotals(id, year));

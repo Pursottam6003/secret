@@ -36,7 +36,9 @@ public class AnalyticsService {
     /** Weekly totals for a given year */
     @Transactional(readOnly = true)
     public List<DataPoint> getWeeklyTotals(Long groupId, int year) {
-        List<Object[]> rows = expenseRepository.sumAmountByWeekForGroup(groupId, year);
+        LocalDate start = LocalDate.of(year, 1, 1);
+        LocalDate end = LocalDate.of(year, 12, 31);
+        List<Object[]> rows = expenseRepository.sumAmountByWeekForGroup(groupId, start, end);
         List<DataPoint> result = new ArrayList<>();
         for (Object[] row : rows) {
             result.add(DataPoint.builder()
@@ -47,21 +49,28 @@ public class AnalyticsService {
         return result;
     }
 
-    /** Monthly totals for a given year */
-    @Transactional(readOnly = true)
+
     public List<DataPoint> getMonthlyTotals(Long groupId, int year) {
-        List<Object[]> rows = expenseRepository.sumAmountByMonthForGroup(groupId, year);
+
+        LocalDate start = LocalDate.of(year, 1, 1);
+        LocalDate end = LocalDate.of(year, 12, 31);
+
+        List<Object[]> rows =
+                expenseRepository.sumAmountByMonthForGroup(groupId, start, end);
+
         List<DataPoint> result = new ArrayList<>();
+
         for (Object[] row : rows) {
             int month = ((Number) row[0]).intValue();
+
             result.add(DataPoint.builder()
                     .label(Month.of(month).name())
                     .value((BigDecimal) row[1])
                     .build());
         }
+
         return result;
     }
-
     /** Category breakdown */
     @Transactional(readOnly = true)
     public List<DataPoint> getCategoryBreakdown(Long groupId) {

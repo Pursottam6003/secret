@@ -20,6 +20,7 @@ public class PersonalExpenseController {
 
     private final PersonalExpenseService personalExpenseService;
 
+
     @GetMapping
     public ResponseEntity<List<PersonalExpense>> getMyExpenses(
             @AuthenticationPrincipal UserDetails user) {
