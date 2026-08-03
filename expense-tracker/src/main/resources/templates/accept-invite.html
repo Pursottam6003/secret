@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Accept Group Invite</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="card mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+            <h3 class="card-title">Join Expense Group</h3>
+            <p th:if="${error}" class="alert alert-danger" th:text="${error}"></p>
+            <p th:if="${success}" class="alert alert-success" th:text="${success}"></p>
+
+            <form th:action="@{/invite/accept}" method="post">
+                <input type="hidden" name="token" th:value="${token}"/>
+
+                <div th:if="${user == null}">
+                    <p>You need to log in or register first.</p>
+                    <a th:href="@{/login(redirect=@{/invite/{token}(token=${token})})}" class="btn btn-primary">Login</a>
+                    <a th:href="@{/register(redirect=@{/invite/{token}(token=${token})})}" class="btn btn-secondary">Register</a>
+                </div>
+                <div th:if="${user != null}">
+                    <p>Ready to accept this invite?</p>
+                    <button type="submit" class="btn btn-primary">Accept & Join</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

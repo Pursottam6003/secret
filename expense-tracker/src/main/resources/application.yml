@@ -78,6 +78,10 @@ spring:
     activate:
       on-profile: dev
 
+  mail:
+    host: localhost
+    port: 1025
+
   datasource:
     url: jdbc:h2:mem:expensedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -127,7 +131,17 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-  # Both KafkaTemplate and RedisConnectionFactory beans must exist
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+# Both KafkaTemplate and RedisConnectionFactory beans must exist
   # because ExpenseEventProducer and RedisConfig constructor-inject
   # them directly. Do NOT exclude their autoconfiguration in prod,
   # or the app fails to start - even without a reachable broker/host,

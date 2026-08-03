@@ -507,11 +507,16 @@ async function addMember(groupId) {
 
     try {
         const res = await apiPost(`/api/groups/${groupId}/members?email=${encodeURIComponent(email)}`, {});
+        const data = await res.json().catch(() => ({}));
+
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            errEl.textContent = err.detail || err.message || 'Failed to add member';
+            errEl.textContent = data.message || 'Failed to add member';
             errEl.classList.remove('d-none');
             return;
+        }
+
+        if (data.status === 'invited') {
+            alert(data.message);
         }
         window.location.reload();
     } catch (e) {
@@ -522,7 +527,6 @@ async function addMember(groupId) {
         btn.textContent = 'Add';
     }
 }
-
 function connectWebSocket(groupId) {
     if (typeof StompJs === 'undefined') return;
     const client = new StompJs.Client({ webSocketFactory: () => new SockJS('/ws') });

@@ -1,0 +1,41 @@
+<button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#inviteModal">
+    <i class="bi bi-person-plus"></i> Invite Friends
+</button>
+
+<div class="modal fade" id="inviteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Invite to [[${group.name}]]</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="email" id="inviteEmail" class="form-control" placeholder="friend@example.com"/>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" th:onclick="'sendInvite(' + ${group.id} + ')'">Send Invite</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function sendInvite(groupId) {
+        const email = document.getElementById('inviteEmail').value.trim();
+        if (!email) return alert('Enter an email');
+
+        fetch('/api/groups/' + groupId + '/invite', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email})
+        })
+        .then(r => r.ok ? r.json() : Promise.reject(r))
+        .then(d => {
+            alert('Invite sent!');
+            bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
+            document.getElementById('inviteEmail').value = '';
+        })
+        .catch(() => alert('Failed to send invite'));
+    }
+</script>

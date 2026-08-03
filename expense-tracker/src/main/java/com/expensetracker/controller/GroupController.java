@@ -42,14 +42,6 @@ public class GroupController {
         return ResponseEntity.ok(groupService.getMembers(id));
     }
 
-    @PostMapping("/{id}/members")
-    public ResponseEntity<Void> addMember(@PathVariable Long id,
-                                          @RequestParam String email,
-                                          @AuthenticationPrincipal UserDetails user) {
-        groupService.addMemberByEmail(id, email, user.getUsername());
-        return ResponseEntity.ok().build();
-    }
-
     @DeleteMapping("/{id}/members/{userId}")
     public ResponseEntity<Void> removeMember(@PathVariable Long id,
                                              @PathVariable Long userId,
